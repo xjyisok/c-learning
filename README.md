@@ -196,7 +196,7 @@ __原因__：
 
 3. 设计上的一致性
 限制静态函数只能访问静态成员，这种设计强化了类设计中成员的独立性。这使得静态成员可以作为全类共享的资源，而非静态成员则属于各个实例。
-# local static  
+## local static  
 ```
 int i=0;//全局变量全局可访问。
 void function(){
@@ -217,7 +217,7 @@ std::cout<<i<<std::endl;
 }
 ```
 这里的i在函数体中被唯一定义一次且函数外部不可访问。
-# 单例类
+## 单例类
 所谓单例类即在整个运行周期内该类只有一个实例，所有操作都是对这唯一实例做操作，单例类可如下定义。
 ```
 class singleton {
@@ -337,4 +337,151 @@ public:
         std::cout << "staticConstVar: " << staticConstVar << std::endl;
     }
 };
+```
+## Enums枚举	
+```
+enum level{
+A,B,C
+};//默认A=0,B=1,C=2
+```
+__初始化__
+```
+level num=A;
+```
+__在类中__	
+```
+class Log{
+public:
+enums level{
+A=0,B,C
+};
+void setlevel(level Level){
+num=level;
+std::cout<<num<<std::endl;
+}
+private:
+level num=A;
+}
+int main(){
+Log e;
+e.setlevel(Log::B);
+}
+```
+## Deconstructor
+  在C++中，析构函数（destructor）是一个特殊的成员函数，它在对象生命周期结束时被自动调用以释放资源和执行清理操作。析构函数对于防止资源泄漏（如动态分配的内存未被释放）至关重要，特别是在涉及到资源管理的类设计中。
+析构函数的特点包括：
+  自动调用：当对象的生命周期结束时（例如对象的作用域结束或者通过delete被删除时），其析构函数会被自动调用。
+  无参数和返回值：析构函数不接受任何参数，也不返回任何值。它的名字由波浪符（~）后跟类名组成，例如，如果类名为MyClass，则析构函数为~MyClass()。
+  用途：通常用于释放对象在生命周期内分配的资源，如动态分配的内存、打开的文件句柄、网络连接等。
+  单一性：每个类只能有一个析构函数，不能被重载，这与构造函数不同，后者可以有多个重载形式。
+析构函数的自动调用性质确保了一旦对象不再被使用，所有的资源都将被正确地清理，这是资源管理中的一个重要机制。正确使用析构函数可以帮助避免内存泄漏等常见编程错误，是良好程序设计的基本要求。
+```
+#include <iostream>
+#include <cstring>
+
+class Car {
+private:
+    char* licensePlate;
+
+public:
+    // 构造函数
+    Car(const char* license) {
+        licensePlate = new char[strlen(license) + 1];
+        strcpy(licensePlate, license);
+    }
+
+    // 析构函数
+    ~Car() {
+        delete[] licensePlate;
+        std::cout << "Car destructor called, memory freed." << std::endl;
+    }
+
+    // 显示牌照号
+    void displayLicense() const {
+        std::cout << "License Plate: " << licensePlate << std::endl;
+    }
+};
+
+int main() {
+    Car myCar("ABC123");
+    myCar.displayLicense();
+
+    // 当main函数结束时，myCar的生命周期也结束了
+    // 这将自动调用Car类的析构函数
+    return 0;
+}
+
+```
+在这段代码中定义了一个汽车类，在类构造函数中使用new在堆上创建了一个```lisencePlate```变量，在析构函数中使用delete函数手动进行内存释放，由于析构函数默认执行所以在实例生命周期结束后可以自动释放内存。
+__情况2__
+```
+#include <iostream>
+
+class Box {
+public:
+    Box() {
+        std::cout << "Box is created" << std::endl;
+    }
+    ~Box() {
+        std::cout << "Box is destroyed" << std::endl;
+    }
+};
+
+int main() {
+    // 使用new在堆上创建Box类的实例
+    Box* myBox = new Box();
+
+    // 做一些处理...
+
+    // 最后，使用delete来释放分配的内存
+    delete myBox;
+
+    return 0;
+}
+```
+如果使用new在堆山创建实例，那么必须使用delete显式释放内存析构函数才会执行。
+此外需要注意的是每一个new都需要对应一个delete
+样例如下:	
+```
+class Car {
+private:
+    char* licensePlate;
+
+public:
+    // 构造函数
+    Car(const char* license) {
+        licensePlate = new char[strlen(license) + 1];
+        strcpy(licensePlate, license);
+    }
+
+    // 析构函数
+    ~Car() {
+        delete[] licensePlate;
+        std::cout << "Car destructor called, memory freed." << std::endl;
+    }
+int main(){
+Car mycar=new Car("BYD");
+delete mycar;
+}
+```
+上述代码可以完成```Car```类实例的创建和释放，但是如果将```delete[] licensePlate```删除，那么即使使用delete释放实例mycar也无法释放为licensePlate在堆上分配的内存。同样的如果不使用delete，析构函数不执行licensePlate内存同样无法释放。
+在类和结构体中delete一个实例的作用实际上是触发该实例的析构函数，所以要想释放在堆上创建的数据对象必须在析构函数中使用delete释放内存。
+此外如果在C++中你使用new创建了一个类的实例，即使这个类中不包含任何数据成员，你仍然需要使用delete来释放这个实例所占用的内存。这是因为new操作符分配的不仅仅是类成员的内存，还包括为该对象本身维护的一些额外的内存管理信息。举个例子，即使是一个空类	
+```
+class EmptyClass {};
+
+// 在堆上创建实例
+EmptyClass* myObject = new EmptyClass;
+
+// 代码执行...
+
+// 需要使用delete来释放内存
+delete myObject;
+```
+在这种情况下，EmptyClass可能看起来没有分配任何有用的数据，但是通过new创建的每个对象都占用了一定的内存空间，这些内存用于支持对象的运行时信息（如类型信息和析构函数的调用）。因此，即使类是空的，你也需要用delete来释放这部分内存，避免内存泄漏。
+
+这也是为什么推荐在使用完动态分配的对象后总是确保调用delete，或者更好地，使用智能指针来自动管理内存，从而避免忘记手动释放内存。智能指针如std::unique_ptr和std::shared_ptr在销毁时会自动调用delete，从而简化内存管理。
+## 继承	
+```
+
 ```
