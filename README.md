@@ -265,7 +265,28 @@ __注意！！！__:
 	singleton(const singleton&) = delete;
 	singleton& operator=(const singleton&) = delete;
 ```
-这里的```singleton() {}```被设置为private是为了防止在类外部被new出singleton实例  
+这里的```singleton() {}```被设置为private是阻止在类外部实例化	
+如在main函数中```singleton a```会出现编译错误。	
+```singleton(const singleton&) = delete;```删除了拷贝构造函数。如果在main中进行```singleton s1=singleton::Get();singleton s2=s1```会出现编译错误	
+```singleton& operator=(const singleton&) = delete;```防止的操作如下	
+```singleton s1 = singleton::Get();
+singleton s2;
+s2 = s1; // 这行代码将会导致编译错误
+```	
+虽然因为singleton() {}已经被设置为private导致无法在外部直接创建类，但是```singleton& operator=(const singleton&) = delete;```这句话依旧有意义如下	
+
+1增强可读性和意图表达：	
+  通过明确地删除拷贝构造函数和赋值运算符，代码更具可读性和自解释性，明确告诉阅读代码的人这个类是单例，不允许复制或赋值。	
+
+2防止潜在的修改错误：	
+  假设在未来某个时候，类的私有构造函数被修改为保护或公共构造函数，为了某些特定的原因（例如测试）。如果没有删除拷贝构造函数和赋值运算符，就有可能会引入复制和赋值错误。	
+
+3符合单例模式的标准实现：	
+  大多数单例模式的实现都会删除拷贝构造函数和赋值运算符，这是一个标准的实现方法，确保不会因为意外的复制或赋值导致单例属性失效。	
+
+4编译时保护：	
+  多层次的保护可以防止由于代码变更或维护不当而引入的错误。尽管在当前上下文中私有构造函数已经阻止了直接实例化，但删除拷贝构造函数和赋值运算符提供了额外的编译时保护。	
+  
 ```singleton(const singleton&) = delete;```的意思是删除拷贝构造函数。拷贝构造函数的基本形式为```classname(const classname&);```在所给例子中类的拷贝构造函数为```singleton(const singleton& other):value(other.value){}```
 在main函数中的应用场景  
 ```
@@ -582,4 +603,4 @@ int main() {
 }
 ```
 输出为```entity,xjy```	
-c++中纯虚函数作用是作为一个接口所有继承于该抽象类的派生类都必须重新实现该函数。
+c++中纯虚函数作用是作为一个接口所有继承于该抽象类的派生类都必须重新实现该函数。此外呢可以发现一个问题就是Entity类中已经重写了Printable类中的getname()并且没有添加virtual关键字，但是Player类中依旧可以重写。这是因为任何由纯虚函数重写衍生来的函数都保持虚函数状态被添加到虚函数表中，直到继承链结束。
