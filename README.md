@@ -483,5 +483,103 @@ delete myObject;
 这也是为什么推荐在使用完动态分配的对象后总是确保调用delete，或者更好地，使用智能指针来自动管理内存，从而避免忘记手动释放内存。智能指针如std::unique_ptr和std::shared_ptr在销毁时会自动调用delete，从而简化内存管理。
 ## 继承	
 ```
+#include<iostream>
+#include<string>
+class Entity {
+public:
+	virtual std::string getname() {
+		return "Entity";
+	}
+};
+class Player :public Entity {
+private:
+	std::string m_name;
+public:
+	Player(const std::string& name):m_name(name){}
+	std::string getname() override {
+		return m_name;
+	}
+};
 
+void print(Entity* e) {
+	std::cout << e->getname() << std::endl;
+}
+int main() {
+	Entity* e=new Entity();
+	std::cout << e->getname() << std::endl;
+	Player* p=new Player("chenro");
+	std::cout << p->getname() << std::endl;
+	print(p);
+	Entity* entity = p;
+	std::cout << entity->getname() << std::endl;
+}
 ```
+上述代码中一共涉及到三个知识点：__虚函数__,__接口__,__继承__	
+###__1虚函数__:	
+__1. 虚函数表（vtable）__
+每个包含虚函数的类都有一个虚函数表。这个表是一个函数指针数组，每个指针指向一个虚函数的具体实现。当类被继承并且虚函数被重写时，派生类的虚函数表会被更新，使得相应的函数指针指向新的函数实现。
+
+__2. 对象的指针和虚函数表__
+每个对象都包含一个指向其类的虚函数表的指针（通常称为vptr）。这个指针在对象创建时由构造函数设置，确保它指向正确的虚函数表。如果对象属于派生类，它的虚函数表将包含指向重写函数的指针。
+
+__3. 运行时的函数调用解析__
+当通过基类的指针或引用调用虚函数时，C++运行时不是查看指针的类型，而是查看指针指向的对象的虚函数表，并通过这个表来调用正确的函数实现。这就是为什么即使指针类型是基类，实际调用的也可以是派生类中重写的版本。
+
+__4. 多态的体现__
+这种机制允许在不改变代码外部行为的前提下，扩展或修改类的功能。基类可以定义接口（虚函数），而派生类可以通过重写这些虚函数来提供具体的实现。这使得程序可以在运行时动态地调用正确的函数，实现多态。	
+[具体可参考]:https://blog.csdn.net/li1914309758/article/details/79916414?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522171869762816800227453122%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&request_id=171869762816800227453122&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_positive~default-1-79916414-null-null.142^v100^pc_search_result_base8&utm_term=c%2B%2B%E8%99%9A%E5%87%BD%E6%95%B0%E8%A1%A8&spm=1018.2226.3001.4187	
+### 纯虚函数：	
+```
+class Entity {
+public:
+	virtual std::string getname()=0;
+};
+class Player :public Entity {
+private:
+	std::string m_name;
+public:
+	Player(const std::string& name):m_name(name){}
+	std::string getname() override {
+		return m_name;
+	}
+};
+```
+在类中只定义没有实现的函数叫纯虚函数。带有纯虚函数的类被称之为抽象类只可以作为基类使用，不能对其进行实例化，一般有以下几个功能	
+定义接口：抽象类提供了一组接口，派生类必须实现这些接口。
+多态行为：通过抽象基类的指针或引用，可以调用派生类中重写的函数，实现多态。
+防止直接实例化：抽象类确保用户不能直接创建基类对象，只能通过派生类来使用其功能。
+__接口样例__	
+```
+#include<iostream>
+#include<string>
+class Printable {
+public:
+	virtual std::string getname() = 0;
+};
+class Entity :public Printable {
+public:
+	std::string getname() override {
+		return "entity";
+	};
+};
+class Player :public Entity {
+private:
+	std::string mname;
+public:
+	Player(const std::string& name) : mname(name) {}
+	std::string getname() override {
+		return mname;
+	}
+};
+void print(Printable* p) {
+	std::cout << p->getname() << std::endl;
+};
+int main() {
+	Entity* e = new Entity();
+	print(e);
+	Player* p = new Player("xjy");
+	print(p);
+}
+```
+输出为```entity,xjy```	
+c++中纯虚函数作用是作为一个接口所有继承于该抽象类的派生类都必须重新实现该函数。
