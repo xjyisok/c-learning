@@ -603,4 +603,53 @@ int main() {
 }
 ```
 输出为```entity,xjy```	
-c++中纯虚函数作用是作为一个接口所有继承于该抽象类的派生类都必须重新实现该函数。此外呢可以发现一个问题就是Entity类中已经重写了Printable类中的getname()并且没有添加virtual关键字，但是Player类中依旧可以重写。这是因为任何由纯虚函数重写衍生来的函数都保持虚函数状态被添加到虚函数表中，直到继承链结束。
+c++中纯虚函数作用是作为一个接口所有继承于该抽象类的派生类都必须重新实现该函数。此外呢可以发现一个问题就是Entity类中已经重写了Printable类中的getname()并且没有添加virtual关键字，但是Player类中依旧可以重写。这是因为任何由纯虚函数重写衍生来的函数都保持虚函数状态被添加到虚函数表中，直到继承链结束。	
+## const 关键字	
+__const用于定义常量__
+```
+int main(){
+const int m=100;
+int* a=new int;
+a=(int*)&m;
+*a=2;
+std::cout<<*a<<std::endl
+} \\输出为2
+```
+这里有个奇怪的事情就是直接输出max显示的是max的值没有变化，但是*a却发生了变化，这是因为部分编译器会对const常量进行优化，直接嵌入到代码中，而非每次都从内存中读取。导致其直接被绕过。	
+```
+int main(){
+int max=100;
+const int* a=new int;或者是 int const* a=new int
+*a=2\\会报错；
+a=(int*)&max;\\不会报错；
+}
+```
+当const在```*``之前的时候不能对的地址内容做改变但是可以改变地址，当const在```*```之后的时候反过来可以改变内容但是不能改变地址如	
+```
+int* const a=new int;
+```
+### 类中const应用	
+```
+class entity{
+private:
+int x,y;
+public:
+int getx() const{
+return x;
+}
+}
+```
+getx函数是一个只读函数，一般情况下函数内部不能发生数据修改例如在getx()函数中添加一行代码```y=2```这时会报错。但是当```mutable```关键字允许类中const函数存在元素修改操作。例如```mutable int z```这时就可以在get()函数中为z赋值;此外const类型的类只能调用const类型的函数如下	
+```
+class entity{
+private:
+int x,y;
+public:
+int getx() {
+return x;
+}
+}
+int main(){
+const Entity e;
+std::cout<<e.getx()<<std::endl；}
+```
