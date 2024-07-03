@@ -653,3 +653,112 @@ int main(){
 const Entity e;
 std::cout<<e.getx()<<std::endl；}
 ```
+## C++成员初始化列表	
+```
+#include<iostream>
+#include<string>
+class Example {
+public:
+	Example() {
+		std::cout<<"example created" << std::endl;
+	}
+	Example(int x){
+		std::cout << "example" << x << "created" << std::endl;
+	}
+};
+class Entity {
+private:
+	std::string name;
+	Example exa;
+public:
+	Entity():exa(Example(8))
+ {
+	name = "unknow"; }
+		
+	Entity(const std::string ename) {
+		name = ename;
+	}
+	const std::string getname() {
+		return name;
+	}
+};
+int main() {
+	Entity e;
+	std::cout << e.getname() << std::endl;
+	Entity e1("xjy");
+	std::cout << e1.getname() << std::endl;
+	std::cin.get();
+}
+```
+成员初始化列表在功能上和构造函数内初始化有一点例如将```Entity```构造函数改成```Entity(){exa=Example(8);name="unknow"}```这时实际会创造两个Example实例，一个在参数初始化阶段，一个构造函数阶段。虽说最后只保存了一个实例，但是函数试行过程中首先创造了一个默认example实例销毁他，并且用另外一个实例8覆盖，造成了性能浪费。总之二者差异如下。	
+__成员初始化列表：成员变量在进入构造函数体之前就被初始化。只会调用一次构造函数。__	
+__构造函数体内赋值：成员变量先被默认构造，然后在构造函数体内重新赋值。会调用多次构造和赋值操作。__	
+## 对象创建方式	
+### 1在栈上创建	
+```
+#include<iostream>
+class Entity {
+private:
+	std::string name;
+public:
+	const std::string& getname() {
+		return name;
+	}
+	Entity(const std::string mname):name(mname){}
+};
+int main() {
+	Entity* e;
+	{
+		Entity entity("chenro");
+		e = &entity;
+		std::cout << entity.getname() << std::endl;
+	}
+std::cin.get();
+}
+```
+### 2在堆上创建	
+```
+#include<iostream>
+class Entity {
+private:
+	std::string name;
+public:
+	const std::string& getname() {
+		return name;
+	}
+	Entity(const std::string mname):name(mname){}
+};
+int main() {
+	Entity* e;
+	{
+		Entity* entity=new Entity("chenro");
+		e = entity;
+		std::cout << entity.getname() << std::endl;
+	}
+std::cin.get();
+delete entity;
+}
+```
+这里的大括号就是一个栈，在栈道上创建的数据会在栈上内容执行完毕后被销毁，例如在 __1__ 中执行到```std::cin.get()```时将鼠标放在```e```上会显示```name=""```代表 entity被销毁。但是在堆上创建的如果不执行delete则不会被销毁。	
+## c++隐式转换和explicit关键字	
+```
+#include<iostream>
+#include<string>
+class Entity {
+private:
+	std::string name;
+	int m;
+public:
+        Entity(const std::string& mname) :name(mname), m(-1) {}
+	Entity(int mm) :name("unknow"), m(mm) {}
+};
+void printff(const Entity& e) {
+}
+int main() {
+	printff(2);
+	printff("amns");//报错
+	Entity e = 22;
+	Entity e1 = std::string("chenro");
+}
+```
+隐式转换只允许一次```printff(2)```可以执行因为构造函数只需要接受2就能创建Entity实例，但是```printff("chenro")```不行因为```chenro```是char字符数组而不是string类型字符串需要先转换成string再创建实例，但是隐式转换只允许一次所以会报错。如果为```Entity(const std::string& mname) :name(mname), m(-1) {}```之前添加explicit关键字那么就相当于禁止隐士转换此时```printff(22)```和```Entity e=22```会报错，```Entity(const std::string& mname) :name(mname), m(-1) {}```同理。
