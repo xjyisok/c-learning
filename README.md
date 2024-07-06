@@ -762,3 +762,92 @@ int main() {
 }
 ```
 隐式转换只允许一次```printff(2)```可以执行因为构造函数只需要接受2就能创建Entity实例，但是```printff("chenro")```不行因为```chenro```是char字符数组而不是string类型字符串需要先转换成string再创建实例，但是隐式转换只允许一次所以会报错。如果为```Entity(const std::string& mname) :name(mname), m(-1) {}```之前添加explicit关键字那么就相当于禁止隐士转换此时```printff(22)```和```Entity e=22```会报错，```Entity(const std::string& mname) :name(mname), m(-1) {}```同理。
+## 运算符重载	
+```
+#include<iostream>
+class Vector {
+public:
+	int x, y;
+public:
+	Vector(int xt, int yt) :x(xt), y(yt) {};
+	Vector operator + (const Vector& other) {
+		return Vector(x + other.x, y + other.y);
+	}
+	Vector operator * (const Vector& other) {
+		return Vector(x * other.x, y * other.y);
+	}
+};
+std::ostream& operator << (std::ostream & stream, const Vector& other) {
+	stream << other.x << other.y;
+	return stream;
+}
+int main() {
+	Vector V1(1, 1);
+	Vector V2(2, 2);
+	std::cout << V2 + V1 << V1 * V2 << std::endl;
+}```
+在这里主要两个问题拿```<<```运算符的重载为例所谓的运算符重载可以视为函数的重写，可以将每一个运算符视为一个函数,``` (std::ostream & stream, const Vector& other)```是他的参数列表，理论上来说呢```+```和```*```运算符在重载的时候应该也需要左右两边两个参数相加，但是由于其在类中被定义为类的成员函数，其拥有```this```指针隐式指向调用对象的引用。可以视为```return Vector(this->x * other.x, this->y * other.y);```.
+但是当运算符重载函数被定义为全局函数或者友元函数，那么其由于没有this指针，所以需要将参数完整定义出来例如
+```Vector operator + (const Vector& other) {
+		return Vector(x + other.x, y + other.y);
+	}```如果被定义为友元函数应该改成如下
+```
+```
+class Vector{
+\**\
+ friend Vector operator + (const Vector V1,const Vector& other) {
+		return Vector(V1.x + other.x, V1.y + other.y);
+	}
+ }
+```
+### this 指针的用处	
+1用于返回对象自身
+   ```
+   class Vector {
+public:
+    int x, y;
+
+    Vector(int x, int y) : x(x), y(y) {}
+
+    // 增加成员函数以便进行链式调用
+    Vector& setX(int x) {
+        this->x = x;
+        return *this;
+    }}
+   ```
+2. 解决名称冲突
+在构造函数或其他成员函数中，当参数名称与成员变量名称冲突时，可以使用 this 指针来区分成员变量和参数。
+```
+class Vector {
+public:
+    int x, y;
+
+    Vector(int x, int y) {
+        // 使用 this 指针区分成员变量和参数
+        this->x = x;
+        this->y = y;
+    }
+```
+3. 在复制构造函数和赋值运算符中
+在编写复制构造函数和赋值运算符时，可以使用 this 指针来处理自赋值的情况。
+```
+class Vector {
+public:
+    int x, y;
+
+    Vector(int x, int y) : x(x), y(y) {}
+
+    // 复制构造函数
+    Vector(const Vector& other) : x(other.x), y(other.y) {}
+
+    // 赋值运算符重载
+    Vector& operator=(const Vector& other) {
+        if (this != &other) { // 检查自赋值
+            this->x = other.x;
+            this->y = other.y;
+        }
+        return *this;
+    }}
+```
+## c++对象的生存周期	
+
