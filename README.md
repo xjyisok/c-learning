@@ -850,4 +850,50 @@ public:
     }}
 ```
 ## c++对象的生存周期	
-f'g'f
+```
+#include<iostream>
+class Entity {
+public:
+	Entity() {
+		std::cout << "Entity Created" << std::endl;
+	}
+	~Entity() {
+		std::cout << "Entity Destoryed" << std::endl;
+	}
+};
+class Solver {
+private:
+	Entity* ptr;
+public:
+	Solver(Entity* eptr):ptr(eptr){}
+	~Solver(){
+		delete ptr;
+	}
+};
+int main() {
+	{
+		Solver ptr=new Entity();
+	}
+}
+```
+Solver是对智能指针实现的一个简单演示，```Solver ptr=new Entity();```首先创建一个Entity实例，该实例在堆上被创建并且返回一个指向该实例的指针，该指针被赋值给Solver实例ptr的变量```Entity* ptr;```这里可能会造成疑惑这里实际上并不是类似于```Entity* e=new Entity()```这样直接将创建的实例指针赋值给e,这里完成的效果实际等价于语句```Solver ptr=Solver(new Entity())```或者```Solver ptr(new Entity())```	
+由于这里的ptr在栈上创建也就是其前后两个大括号分割出的作用域，所以在执行到栈作用域结束时ptr生命周期结束自动调用析构函数。这里会有一个问题就是删除的实际是指向Entity实例的指针，而非实例。实际上指针是在栈上的而非在堆上delete关键字删除的不仅仅是指针还有指针指向的内容，因此析构函数执行后不仅删除了指针还删除了ptr指针指向的Entity实例。	
+```
+int* createarray(){
+int array[50];
+return array;
+}
+int main(){
+int* a=createarray();
+}
+```
+这里就会出现一个问题由于int* a=createarray();中createarray()在该语句执行完后其创建的数组就被删除了，因此指向该数组的指针也没有意义。解决这一问题可以如下	
+```
+int* createarray(){
+int* array=new int[50];
+return array;
+}
+int main(){
+int* a=createarray();
+}
+```
