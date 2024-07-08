@@ -897,3 +897,55 @@ int main(){
 int* a=createarray();
 }
 ```
+## 赋值与拷贝构造函数	
+```
+#include<iostream>
+#include<string>
+class String {
+private:
+	char* mptr;
+	unsigned int msize;
+public:
+	String(const char* string) {
+		msize = strlen(string);
+		mptr = new char[msize + 1];
+		memcpy(mptr, string, msize);
+		mptr[msize] = 0;
+	}
+	~String() {
+		delete[] mptr;
+	}
+	friend std::ostream& operator<< (std::ostream& stream, String& string);
+	char& operator[](unsigned int index) {
+		return mptr[index];
+	};
+};
+std::ostream& operator<< (std::ostream& stream,String& string){
+	stream << string.mptr;
+	return stream;
+}
+int main() {
+	String a = "xjy";
+	String b = a;
+	b[2] = 'w';
+	std::cout << a << std::endl;
+	std::cout << b << std::endl;
+	std::cin.get();
+}
+```
+这里会报错这是因为c++中类默认的拷贝构造函数实际上是浅拷贝上述例子中使用到拷贝构造函数实际上是如下	
+```
+String(String& other){
+mptr=other.mptr;
+msize=other.msize;
+}
+```
+这会出现一个问题就是由于使用的是浅拷贝，所以b只拷贝了a的mptr指针但是没有拷贝指针指向的字符串，因此b和a的mptr实际上是指向同一块内存区域的指针，在函数执行结束析构函数会在同一块内存区域内执行两次，由于第一次执行该内存区域已经空了，再次尝试会造成运行崩溃。解决这一问题可以进行深拷贝。	
+```
+String(String& string):msize(string.msize){
+mptr=new char[msize+1];
+memcpy(mptr,string.mptr,msize+1)
+mptr[msize]=0;
+}
+```
+这样b和a进行了一次深拷贝，b重新在堆上分配了一块内存用于存储自己的字符串其mptr指针和a的也不是指向同一块区域。	
