@@ -949,3 +949,53 @@ mptr[msize]=0;
 }
 ```
 这样b和a进行了一次深拷贝，b重新在堆上分配了一块内存用于存储自己的字符串其mptr指针和a的也不是指向同一块区域。	
+## c++动态数组与优化
+```
+#include<iostream>
+#include<vector>
+class Vertex {
+private:
+	int x, y, z;
+public:
+	Vertex(int ex, int ey, int ez) :x(ex), y(ey), z(ez) {
+		std::cout << "vetex created" << std::endl;
+	}
+	Vertex(const Vertex& vertex):x(vertex.x),y(vertex.y),z(vertex.z) {
+		std::cout << "vertex copied" << std::endl;
+	}
+};
+int main() {
+	std::vector<Vertex>vedlist;
+	vedlist.push_back({ 1, 2, 3 });
+	vedlist.push_back({ 4, 5, 6 });
+	vedlist.push_back({7, 8, 9});
+	std::cin.get();
+}
+```
+运行结果如下	
+```
+vetex created
+vertex copied
+vetex created
+vertex copied
+vertex copied
+vetex created
+vertex copied
+vertex copied
+vertex copied
+```
+1这是因为push_back本质上是在main这个栈上首先创建了实例然后将这个实例拷贝到为变长数组分配的内存中，所以每次create都会跟随一个copied。	
+2create后的copied数量逐渐增加这是由于起先并没有为vertex预先分配足够内存空间，默认分配了一个。随着后续实例的添加，变长数组需要重新开辟内存空间这时就需要先拷贝当前内存空间内的实例进行一次copied	
+这种拷贝机制会造成大量的性能浪费因此可以采用emplace_back和预分配内存来处理	
+```
+int main() {
+	std::vector<Vertex>vedlist;
+        vedlist.reverse(3)
+	vedlist.emplace_back( 1, 2, 3 );
+	vedlist.emplace_back( 4, 5, 6 );
+	vedlist.emplace_back(7, 8, 9);
+	std::cin.get();
+}
+```
+``` vedlist.reverse(3)```为变长数组预先分配了足够的内存空间让其避免因为当前内存空间不够进行拷贝操作，```emplace_back```直接在vedlist中创建实例，避免了从main栈中拷贝。
+
