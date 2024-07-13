@@ -1037,4 +1037,32 @@ int main() {
 ```
 ## 堆与栈内存的比较	
 堆上分配内存需要在空闲列表上寻找足够大小内存块，记录空闲内存有哪些内存被使用又有哪些被拿走了，在使用完后又要delete再次维护空闲列表。
-## 静态数组
+## 函数指针	
+```
+#include<iostream>
+#include<vector>
+void helloworld() {
+	std::cout << "helloworld" << std::endl;
+}
+void Print(int value) {
+	std::cout << value << ' ';
+}
+void Printarray(std::vector<int>& values,void(*func)(int)){
+	for (int i = 0; i < values.size(); i++) {
+		func(values[i]);
+}
+}
+int main() {
+	typedef void(*helloworldfunction)();
+	auto Helloworld = helloworld;
+	helloworldfunction wpe = helloworld;
+	wpe();
+	Helloworld();
+	std::vector<int>array = { 1,2,3,4,5 };
+        Printarray(array, [](int value) {std::cout << value << ' '; });
+	Printarray(array, Print);
+	std::cin.get();
+}
+```
+```void(*func)(int)```形式有点类似于函数签名，区别是在函数名前面添加*。返回的实际上是一个指向无返回值且传参为int的函数的指针。通过（）可以调用该指针指向的函数。```Printarray(array, [](int value) {std::cout << value << ' '; });```是lamba表达式的使用，这里的和```Printarray(array, Print);```的区别之处就是将指向全局函数```Print```的函数指针改编成了指向```[](int value) {std::cout << value << ' '; }```这一只在```Printarray```被调用时生成的临时函数。	
+### lamba 表达式	
