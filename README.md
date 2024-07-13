@@ -990,12 +990,51 @@ vertex copied
 ```
 int main() {
 	std::vector<Vertex>vedlist;
-        vedlist.reverse(3)
+        vedlist.reserve(3)
 	vedlist.emplace_back( 1, 2, 3 );
 	vedlist.emplace_back( 4, 5, 6 );
 	vedlist.emplace_back(7, 8, 9);
 	std::cin.get();
 }
 ```
-``` vedlist.reverse(3)```为变长数组预先分配了足够的内存空间让其避免因为当前内存空间不够进行拷贝操作，```emplace_back```直接在vedlist中创建实例，避免了从main栈中拷贝。
+``` vedlist.reserve(3)```为变长数组预先分配了足够的内存空间让其避免因为当前内存空间不够进行拷贝操作，```emplace_back```直接在vedlist中创建实例，避免了从main栈中拷贝。
+## c++模板	
+```
+#include<iostream>
+#include<string>
+template<typename T>
+void Print(T name) {
+	std::cout << name << std::endl;
+}
 
+template<typename T,int M>
+class Array {
+private:
+	T array[M];
+public:
+	int getsize() const {
+		return M;
+	}
+	Array(const T* string) {
+		for (int i = 0; i < M; i++) {
+			array[i] = string[i];
+		}
+	}
+	void Printmessage() {
+		for (int i = 0; i < M; i++) {
+			std::cout << array[i];
+		}
+	}
+};
+int main() {
+	Print(1);
+	Print(1.1);
+	Print("Helloworld");
+	char b[5] = {'a','b','c','d','\0'};
+	Array<char, 5>a(b);
+	a.Printmessage();
+}
+```
+## 堆与栈内存的比较	
+堆上分配内存需要在空闲列表上寻找足够大小内存块，记录空闲内存有哪些内存被使用又有哪些被拿走了，在使用完后又要delete再次维护空闲列表。
+## 静态数组
