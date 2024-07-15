@@ -1110,4 +1110,31 @@ int main() {
 
 }
 ```
-这里创建了一个名为worker的线程，传入的参数是函数签名。在没有worker。join之前worker和主线程并发执行
+这里创建了一个名为worker的线程，传入的参数是函数签名。在没有worker。join之前worker和主线程并发执行	
+## c++中的sort	
+```
+#include<iostream>
+#include<vector>
+#include<algorithm>
+int main(){
+std::vector<int>array={1,2,3,4,5};
+std::sort(array.begin(),std::end(),std::greater<int>());
+}
+```
+这里有一个困惑的地方就是```std::greater<int>()```是个什么东西，很明显std::greater<int>是一个模板类定义因此呢这句话实际上是用这个模板类定义了一个函数对象。这也是一个很让人疑惑的地方，类怎么能定义一个函数对象。这个函数对象虽然是一个类实例但是却可以像函数一样调用这是个很奇怪的事情。这里实际上涉及到仿函数。不妨看看std::greater<int>这一模板类的底层实现	
+```
+namespace std {
+    template <typename T>
+    struct greater {
+        bool operator()(const T& lhs, const T& rhs) const {
+            return lhs > rhs;
+        }
+    };
+}
+```
+这里呢重载了std命名空间中greater类的()操作符使其可以作为一个仿函数被调用。__注意这里```std::greater<int>()```是一个整体，是一个实例__，__std::greater<int>不是数据类型，“（）”不是由```std::greater<int>```创建出的实例！！！！！！！！！！！！！！！！__ ```std::greater<int>()```是c++中除了在栈上创建例如```greater g```和在堆上创建例如```greater* g=new greater()```这两种方法外另外一种比较特殊的对象创建方式，被称之为 __临时对象__ 和lamba表达式有点相似都是在使用时才会被创建使用完立马消失。	
+那么现在就明了了std::greater<int>()是一个仿函数实例，接受来自迭代器的传参```return bool=greater(lhs,rhs)```这里的自动调用实际上就涉及到一堆东西了比如
+编译器解析：当编译器遇到 greater(2, 3) 时，它识别出这是一个函数调用语法。
+成员函数查找：编译器会检查 greater 对象所属的类（即 Adder）是否定义了 operator() 运算符。
+运算符调用：如果找到，编译器会生成代码来调用这个 operator() 成员函数，就像普通的成员函数调用一样。	
+这里要注意的是这个operator()是所有仿函数类中必须被重载的，这里就涉及到c++标准了，具体得去看文档。
