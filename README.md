@@ -1065,4 +1065,49 @@ int main() {
 }
 ```
 ```void(*func)(int)```形式有点类似于函数签名，区别是在函数名前面添加*。返回的实际上是一个指向无返回值且传参为int的函数的指针。通过（）可以调用该指针指向的函数。```Printarray(array, [](int value) {std::cout << value << ' '; });```是lamba表达式的使用，这里的和```Printarray(array, Print);```的区别之处就是将指向全局函数```Print```的函数指针改编成了指向```[](int value) {std::cout << value << ' '; }```这一只在```Printarray```被调用时生成的临时函数。	
-### lamba 表达式	
+## 命名空间	
+```
+#include<iostream>
+#include<string>
+#include<algorithm>
+namespace apple{
+	void print(const char* message) {
+		std::cout << message << std::endl;
+	}
+}
+namespace orange {
+	void print(std::string message) {
+		std::reverse(message.begin(), message.end());
+		std::cout << message << std::endl;
+	}
+}
+int main() {
+	using namespace apple;
+	using namespace orange;
+	const char* message = "hello";
+	print(message);
+}
+```
+这里的输出应该是```hello```因为print并没有指定哪个命名空间所以采用就近原则这里的就近原则指的是是否存在隐式转换，apple::print的传参类型是```const char*```和message类型一致所以调用的是apple::print此外这里要注意的是隐式转换并不是双向的const char* 到std::string存在隐式转换但是反过来就不行例如我将```using namespace apple```注释掉此时没问题const* char可以隐式转换为std::string。但是我若将```using namespace orange```注释掉同时messgae类型为std::string这时就会在print（message)那报错。	
+## 线程	
+```
+#include<iostream>
+#include<thread>
+static bool is_thread_finished = false;
+void print() {
+	using namespace std::chrono;
+	while (!is_thread_finished) {
+		std::cout << "message" << std::endl;
+		std::this_thread::sleep_for(1s);
+	}
+}
+int main() {
+	std::thread worker(print);
+	std::cin.get();
+	is_thread_finished = true;
+	worker.join();
+	std::cin.get();
+
+}
+```
+这里创建了一个名为worker的线程，传入的参数是函数签名。在没有worker。join之前worker和主线程并发执行
