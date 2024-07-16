@@ -1176,3 +1176,50 @@ __假设int a=50__ 的内存布局如下
 | 0x1007 | 随机数据       |
 ```
 然后呢如果在这时候我们将b的类型改变成```double& b```并且```b=0.0```这时候程序会崩溃。这是因为改成引用类型后b写入就代表a写入0.0是一个八字节的浮点数，但是由于a只占用了四个字节，后续的四个字节的内存区域是未被定义的。往未被定义的内存区域中写入内容造成了程序崩溃。
+## 联合体	
+```
+int main() {
+	struct Union {
+		union {
+			float a;
+			int b;
+		};
+	};
+	Union u;
+	u.a = 2.0f;
+	float c = 2.0f;
+	int d = *(int*)&c;
+	std::cout << d << std::endl;
+	std::cout << u.a << ' ' << u.b << std::endl;
+}
+```
+联合体其作用是用不同的解读方式解释同一块区域的内存中的内容定义多种不同的访问方式这里的d输出和u.b相同都是2的30次方对应的就是2.0的IEEE754表示的二进制码```0100 0000 0000 0000 0000 0000 0000 0000```转换为十进制整数的形式。具体的计算方式得查询计算机组织体系相关书籍。	
+```
+#include<iostream>
+struct vector2 {
+	float i, j;
+};
+struct vector4 {
+	//float a, b, c, d;
+	/*vector2& getaA() {
+		return *(vector2*)&a;
+	}*/
+	union {
+		struct {
+			float x, y, z, w;
+		};
+		struct {
+			vector2 m, n;
+		};
+	};
+};
+void printvector2(const vector2& v){
+	std::cout << v.i << ' ' << v.j << std::endl;
+}
+int main() {
+	vector4 v = { 1.0f,2.0f,3.0f,4.0f };
+	printvector2(v.m);
+	printvector2(v.n);
+}
+```
+这是联合体在类中的应用
