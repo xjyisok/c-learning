@@ -1198,7 +1198,7 @@ int main() {
 IEEE 754 浮点数表示
 一个 32 位（4 字节）的 float 类型数值在 IEEE 754 标准下的表示形式如下：
 ```
-SEEEEEEE EEEEEEEE MMMMMMMM MMMMMMMM MMMMMMMM
+SEEEEEEE EMMMMMMM MMMMMMMM MMMMMMMM
 S：符号位，占 1 位。
 E：指数位，占 8 位。
 M：尾数，占 23 位（隐含一个首位 1，即 24 位）。
