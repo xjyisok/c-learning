@@ -1244,3 +1244,60 @@ int main() {
 }
 ```
 这是联合体在类中的应用
+## 虚析构函数	
+```
+#include<iostream>
+class Base {
+public:
+	Base() {
+		std::cout << "Base project constructed" << std::endl;
+	}
+	~Base() {
+		std::cout << "Base Project destructed"<<std::endl;
+	}
+};
+class Derived :public Base {
+private:
+	int* marray;
+public:
+	Derived() {
+		marray = new int[5];
+		std::cout << "Derived project constructed"<<std::endl;
+	}
+	~Derived() {
+		delete[] marray;
+		std::cout << "Derived project destructed" << std::endl;
+	}
+};
+int main() {
+	Base* b = new Base();
+	delete b;
+	std::cout << "-------------" << std::endl;
+	Derived* d = new Derived();
+	delete d;
+	std::cout << "---------------" << std::endl;
+	Base* ba = new Derived();
+	delete ba;
+}
+```
+输出为	
+```
+Base project constructed
+Base Project destructed
+-------------
+Base project constructed
+Derived project constructed
+Derived project destructed
+Base Project destructed
+---------------
+Base project constructed
+Derived project constructed
+Base Project destructed
+```
+可以看出当我们将基类指针```ba```指向派生类对象的时候，当调用析构函数时并没有调用派生类的析构函数而只调用了基类的，这样如果在派生类的构造函数中有在堆上创建变量的操作由于无法释放内存很可能会造成内存泄漏的问题。为了解决这一问题为基类的析构函数添加virtual关键字表明可能还有其它析构函数。	
+这里要注意一个问题 __虚析构函数和普通成员函数不同的是，普通成员函数通过维护一个虚函数表实现基于基类成员函数的重写和覆盖。但是析构函数不同，析构函数是在基类析构函数的基础上添加派生类的析构函数，其本身并不会被覆盖__。
+```
+virtual ~Base() {
+	std::cout << "Base Project destructed"<<std::endl;
+}
+```
