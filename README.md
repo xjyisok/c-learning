@@ -1301,3 +1301,73 @@ virtual ~Base() {
 	std::cout << "Base Project destructed"<<std::endl;
 }
 ```
+## dynamic_cast	
+```
+#include<iostream>
+#include<string>
+class Entity {
+public:
+	virtual void get() {};
+};
+class Player :public Entity {
+
+};
+class Enemy :public Entity {
+
+};
+int main() {
+	Player* player = new Player();
+	Entity* e = new Entity();
+	Entity* e1 = new Enemy();
+	Entity* e2 = new Player();
+	Player* p = dynamic_cast<Player*>(e2);
+	if (p) {
+		std::cout << "convert succeeded" << std::endl;
+	}
+	else {
+		std::cout << "can't convert" << std::endl;
+	}
+}
+```
+dynamic_cast时运行时安全的转移多态类型，主要用于在继承关系中进行向下转换（downcasting），即从基类指针或引用转换到派生类指针或引用。和static_cast相比他多了运行时类型检查即RTTI。防止了在强制类型转换中可能会出现的未定义行为，例如将一个指向基类或者其余派生类的基类指针强制转换为当前类指针。说到多态这里还有一点想法补充，也是在学习这一章时的浮现出的一个问题	
+c++中多态的实现实际上是靠基类维护一个虚函数表，这个虚函数表使得基类可以通过其基类指针调用派生类中独有的函数，但是呢很多情况下派生类中不仅包含重写于基类虚函数的函数还包含其独有函数，这种情况下通过基类指针无法调用派生类的这些独有函数。除了上述最简单的dynamic_cast还可以将所有可能的实体类中出现的函数都添加到基类的虚函数表中，但是这样的结果就是基类太过于冗余，在函数继承中会造成大量的性能浪费。有一种特殊的方法是采用访问者模式具体实现如下	
+```
+#include<iostream>
+class Base;
+class Derived;
+class Visitor {
+public:
+	virtual void visit(Base* base) = 0;
+	virtual void visit(Derived* derive) = 0;
+};
+class Base {
+public:
+	~Base() = default;
+	virtual void accept(Visitor* visitor) = 0;
+};
+class Derived:public Base{
+public:
+	void accept(Visitor* visitor) override {
+		visitor->visit(this);
+	}
+	void derivedFunction() {
+		std::cout << "Derived specific function" << std::endl;
+	}
+};
+class Derived_visitor:public Visitor {
+public:
+	void visit(Base* base) override {
+		std::cout << "Visiting Base" << std::endl;
+	}
+	void visit(Derived* derive)override {
+		std::cout << "Visiting Derive" << std::endl;
+		derive->derivedFunction();
+	}
+};
+int main() {
+	std::unique_ptr<Base>base = std::make_unique<Derived>();
+	Visitor* visit = new Derived_visitor();
+	base->accept(visit);
+}
+```
+通过使用访问者模式可以将对象的操作分离到独立的访问对象之中，如果要实现通过基类指针调用派生类独有函数的操作只需要在Visitor中定义visit纯虚函数，在Derived_visitor中重写visit同时在Derived类中添加visit操作。本质上就是在基类和派生类之间找了个中间类，让基类和派生类的独有函数之间架起了一个指针桥梁，基类通过虚函数表指向visit类，再通过visit类的指针再通过虚函数表中的accept函数调用派生类的独有函数。
