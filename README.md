@@ -1371,3 +1371,79 @@ int main() {
 }
 ```
 通过使用访问者模式可以将对象的操作分离到独立的访问对象之中，如果要实现通过基类指针调用派生类独有函数的操作只需要在Visitor中定义visit纯虚函数，在Derived_visitor中重写visit同时在Derived类中添加visit操作。本质上就是在基类和派生类之间找了个中间类，让基类和派生类的独有函数之间架起了一个指针桥梁，基类通过虚函数表指向visit类，再通过visit类的指针再通过虚函数表中的accept函数调用派生类的独有函数。
+## 共享指针share_ptr
+基本使用
+```
+class MyClass {
+public:
+    MyClass() {std::cout << "MyClass Constructor" << std::endl;}
+    ~MyClass() {std::cout << "MyClass Destructor" << std::endl;}
+    void display() const {
+        std::cout << "MyClass display" << std::endl;
+    }
+}
+int main() {
+    {
+        std::shared_ptr<MyClass> ptr1 = std::make_shared<MyClass>();
+        {
+            std::shared_ptr<MyClass> ptr2 = ptr1; // ptr2 共享 ptr1 管理的对象
+            ptr2->display();
+            std::cout << "ptr2 use count: " << ptr2.use_count() << std::endl; // 引用计数
+        }
+        std::cout << "ptr1 use count: " << ptr1.use_count() << std::endl; // 引用计数
+    } // 超出作用域，引用计数为0，对象被销毁
+    return 0;
+```
+自定义删除器	shared_ptr 可以使用自定义删除器，在对象销毁时执行特定操作。
+```
+void customDeleter(int* p) {
+    std::cout << "Custom Deleter called for " << *p << std::endl;
+    delete p;
+}
+int main() {
+    std::shared_ptr<int> ptr(new int(10), customDeleter);
+    return 0;
+}
+```
+循环引用	
+```
+class Node {
+public:
+    std::shared_ptr<Node> next;
+    ~Node() {
+        std::cout << "Node Destructor" << std::endl;
+    }
+};
+
+int main() {
+    {
+        std::shared_ptr<Node> node1 = std::make_shared<Node>();
+        std::shared_ptr<Node> node2 = std::make_shared<Node>();
+        node1->next = node2;
+        node2->next = node1; // 这将导致循环引用，两个对象都不会被销毁
+    } // node1 和 node2 超出作用域，但对象不会被销毁，因为存在循环引用
+```
+## std::any std::variant	
+```
+#include<iostream>
+#include<any>
+#include<variant>
+int main() {
+	std::any b;
+        b = "asdjaks";
+	std::string s = std::any_cast<std::string>(b);
+	//const char* s = std::any_cast<const char*>(b);
+	std::cout << s << std::endl;
+}
+```
+std::any是类型不安全的，例如上述代码中的b实际上是const char*类型的但是由于程序员的失误有可能原本目的是创建一个std::string类型的，但是由于std::any是在运行时检查实际存储的类型是否和请求的类型相匹配，这就可能导致程序崩溃
+但是 std::variant相比之下就安全许多，它要求在定义阶段就限制变量数据类型，避免了因为失误造成的崩溃	
+```
+int main() {
+	std::variant<std::string, int>d;
+	d = "asdasdasd";
+	std::string ds = std::get<std::string>(d);
+	std::cout << ds << std::endl;
+}
+```
+这时d虽然看似是const char*类型但是由于在定义初期就将d的数据类型范围限制死了所以d的数据类型会被自动匹配为std::string实现了类型安全。
