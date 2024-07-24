@@ -837,7 +837,7 @@ public:
 
     Vector(int x, int y) : x(x), y(y) {}
 
-    // 复制构造函数
+    // 拷贝构造函数
     Vector(const Vector& other) : x(other.x), y(other.y) {}
 
     // 赋值运算符重载
@@ -1446,4 +1446,46 @@ int main() {
 	std::cout << ds << std::endl;
 }
 ```
-这时d虽然看似是const char*类型但是由于在定义初期就将d的数据类型范围限制死了所以d的数据类型会被自动匹配为std::string实现了类型安全。
+这时d虽然看似是const char*类型但是由于在定义初期就将d的数据类型范围限制死了所以d的数据类型会被自动匹配为std::string实现了类型安全。	
+## 字符串优化	
+```std::string```虽然没有显示的在堆上分配，但是在```std::string```类中存在堆上分配内存的操作可以手动实现一个简单的c++```std::string```类如下	
+```
+class string{
+private:
+   const char* data;
+public
+  string（const char* String）{
+  string_size=strlen(String);
+  data=new char[stringsize+1];
+  std::strcpy(data,s);
+}
+  ~string(){
+delete[] data;
+}
+}
+```
+可以看到std::string在进行赋值构造时会进行堆分配操作然而堆分配操作相比于在栈上分配内存需要维护空闲表这是一个耗时的操作，因此为了堆字符串处理速度进行优化，我们可以使用指针的形式c++17中提供了如下工具	
+```
+static uint32_t allocatecount=0;
+void* operator new(size_t size) {
+	allocatecount++;
+	std::cout << "allocatecount: " <<size<< std::endl;
+	return malloc(size);
+}
+void Printname(const std::string_view& name) {
+	std::cout << name << std::endl;
+}
+int main() {
+	std::string name = "asdadalsp";
+#if 0
+	std::string firstname = name.substr(0,3);
+	std::string lastname = name.substr(3, size(name)-2);
+#else
+	std::string_view firstname(name.c_str(),3);
+	std::string_view lastname(name.c_str()+3,6)；
+#endif
+	Printname(lastname);
+	std::cout << allocatecount << std::endl;
+}
+```	
+
