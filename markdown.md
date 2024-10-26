@@ -237,7 +237,7 @@ C:\Users\XDUAI\Desktop\windowsmpi>winapitest.exe
 ### 原理
 读写锁保证了在同一时间内只有一个线程允许对变量进行读和写操作，保证数据一致性。
 
-## 作业2Pthread实现多线程矩阵乘法。
+## 作业2Pthread实现多线程矩阵乘法(Mingw64)。
 代码如下
 ```
 #include<iostream>
@@ -318,15 +318,67 @@ int main(){
 ```
 代码解释：
 这里将输入的矩阵和最后的结果矩阵作为全局变量，线程函数的输入参数为一个元素为线程id和线程数量的结构体。因为只需要知道线程id和线程数量就能得知每个线程负责的行。同时为了减少cache miss（矩阵相乘右边的矩阵读取方式是按照列读取和二维数组在内存中的存储顺序相悖，缓存在从内存中预取数据时是按照行取的，所以在取b中的数据时由于取数据的顺去和缓存读取的顺序不同，大概率b中使用的数据在缓存中不存在，只能重新从内存中读取开销十分巨大），因此这里对b进行转置。在线程函数中对转置矩阵进行行读取，减少cache miss提高代码性能。
-###输出结果：
+### 输出结果：（运行十次取平均值）
 | NUM_THREADS|64*64|128*128|256*256|512*512|
 |--------|--------|--------|-------|-------|
-| 2|   1 | 18   |49|1.97|
-|4| 9   | 17   |47|3.65|
-|8| 8   | 19   |48|4.61|
-|16|1|1|1|4.43|
-|32|1|1|1|5.38|
-|64|1|1|1|5.67|
+|2|1.5|1.76|1.76|1.97|
+|4|<1|2.63|3.41|3.65|
+|8|<1|3.61|3.80|4.61|
+|16|<1|2.75|4.14|4.43|
+|32|<1|3.28|5.06|5.38|
+|64|<1|2.08|4.96|5.67|
+* 结果分析：从不同大小的矩阵在不同线程下的加速比来看，加速比由于进程间调度以及缓存中cachemiss的影响，在固定任务中存在加速比上限，不能做到随着线程的增加做到无线增加。同时如果任务本身规模就十分的小，采取过多的线程对于计算速度的影响可能是反向的。此外在运行过程中在问题规模较小时我甚至发现在少数的几次输出结果中加速比大于县城数量。通过对代码的分析我认为可能是因为我首先运行了单线程矩阵相乘的函数，在运行```singlemultiply```后缓存中已经存在了矩阵```a,b```的元素，大大减少了后续多线程矩阵相乘的cache miss率。由于在问题规模较小时本身计算时间就很小，在这种情况下，缓存cachemiss降低带来的计算时间降低很可能接近多线程带来的收益。
+## 作业3：OPENMPI helloworld
+代码
+```
+#include <stdio.h>
+#include <omp.h>
 
+int main(int argc, char **argv) { 
+    int nthreads, thread_id; 
+    printf("I am the main thread.\n"); 
+
+    #pragma omp parallel private(nthreads, thread_id)
+    { 
+        nthreads = omp_get_num_threads(); 
+        thread_id = omp_get_thread_num(); 
+        printf("Hello. I am thread %d out of a team of %d\n", thread_id, nthreads);
+    } 
+
+    printf("Here I am, back to the main thread.\n"); 
+    return 0;
+}
+```
+C:\Users\XDUAI\Desktop\openmptest>g++ -fopenmp helloworld.cpp -o hello
+
+C:\Users\XDUAI\Desktop\openmptest>hello.exe
+I am the main thread.
+Hello. I am thread 0 out of a team of 12
+Hello. I am thread 6 out of a team of 12
+Hello. I am thread 4 out of a team of 12
+Hello. I am thread 8 out of a team of 12
+Hello. I am thread 11 out of a team of 12
+Hello. I am thread 7 out of a team of 12
+Hello. I am thread 1 out of a team of 12
+Hello. I am thread 9 out of a team of 12
+Hello. I am thread 5 out of a team of 12
+Hello. I am thread 3 out of a team of 12
+Hello. I am thread 2 out of a team of 12
+Hello. I am thread 10 out of a team of 12
+Here I am, back to the main thread.
+```
+在默认情况下创建了12个线程，这是因为我的cpu是12核的
+设置线程数量为4
+```
+C:\Users\XDUAI\Desktop\openmptest>g++ -fopenmp helloworld.cpp -o hello 
+
+C:\Users\XDUAI\Desktop\openmptest>hello.exe
+I am the main thread.
+Hello. I am thread 0 out of a team of 0
+Hello. I am thread 1 out of a team of 4199854
+Hello. I am thread 2 out of a team of 16016720
+Hello. I am thread 3 out of a team of 4199854
+Here I am, back to the main thread.
+```
 
 
