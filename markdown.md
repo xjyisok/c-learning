@@ -349,6 +349,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 ```
+```
 C:\Users\XDUAI\Desktop\openmptest>g++ -fopenmp helloworld.cpp -o hello
 
 C:\Users\XDUAI\Desktop\openmptest>hello.exe
@@ -369,6 +370,7 @@ Here I am, back to the main thread.
 ```
 在默认情况下创建了12个线程，这是因为我的cpu是12核的
 设置线程数量为4
+
 ```
 C:\Users\XDUAI\Desktop\openmptest>g++ -fopenmp helloworld.cpp -o hello 
 
